@@ -9,7 +9,7 @@ SELECT DISTINCT "City" FROM customers;
 SELECT "CompanyName" FROM suppliers ORDER BY "CompanyName" DESC;
 -- Вибрати всі назви компаній-постачальників в порядку зворотному алфавітному.
 SELECT "OrderID" AS "OrderNumber", "ProductID" AS "ProductNumber", * FROM order_details;
--- To think
+-- Отримати всі деталі замовлень, замінивши назви в назвах стовпчиків ID на Number.
 SELECT "CompanyName", "Address", "Phone" FROM "suppliers" WHERE "Country"='USA' LIMIT 3;
 -- Знайти трьох постачальників з США. Вивести назву, адресу та телефон. 
 SELECT "ContactName" FROM customers WHERE "ContactName" LIKE 'H%' or "ContactName" LIKE 'D%' or "ContactName" LIKE 'O%';
