@@ -25,12 +25,7 @@ LIMIT 3;
 -- 8) Вивести всі контактні імена клієнтів, що починаються з першої літери вашого прізвища, імені, по-батькові. Врахувати чутливість до регістру.
 SELECT "ContactName"
 FROM customers
-WHERE "ContactName" LIKE 'H%'
-   or "ContactName" LIKE 'D%'
-   or "ContactName" LIKE 'O%'
-   or "ContactName" LIKE 'h%'
-   or "ContactName" LIKE 'd%'
-   or "ContactName" LIKE 'o%';
+WHERE "ContactName" SIMILAR TO '[DOHdoh]%';
 -- 9) Показати усі замовлення, в адресах доставки яких немає крапок.
 SELECT *
 FROM orders
