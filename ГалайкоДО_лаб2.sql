@@ -47,3 +47,9 @@ FROM orders
 WHERE (CAST(EXTRACT(DAY FROM "OrderDate") AS INT) % 2) = 1;
 -- 2.5 Знайти адресу відправлення замовлення з найбільшою ціною позиції (враховуючи вартість товару, його кількість та
 -- наявність знижки). Якщо таких замовлень декілька – повернути найновіше.
+SELECT "ShipAddress"
+FROM orders
+ORDER BY (SELECT sum("UnitPrice" * (1 - "Discount") * "Quantity")
+          FROM order_details
+          WHERE orders."OrderID" = order_details."OrderID") DESC, "OrderDate" DESC
+LIMIT 1;
