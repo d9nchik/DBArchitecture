@@ -36,4 +36,7 @@ WHERE "ProductID" NOT IN (
 -- 9 Видалити таблицю OrdersArchive.
 DROP TABLE "OrdersArchive";
 -- 10 Видалити базу Northwind.
+-- Спочатку потрібно переключитися на іншу базу даних
+-- та переконатися, що у бази не повинно взагалі бути активних підключень
+-- \connect <database> або c\ <database>
 DROP DATABASE "Northwind";
