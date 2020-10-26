@@ -7,7 +7,7 @@ VALUES (10, 'Halaiko', 'Danylo', 'Intern', 'Mr.', '2002-06-26', '2020-10-21', 'S
 -- 2 Змінити свою посаду на Director.
 UPDATE employees
 SET "Title"='Director'
-WHERE "LastName" = 'Halaiko';
+WHERE "LastName" = 'Halaiko' and "Title" = 'Intern';
 -- 3 Скопіювати таблицю Orders в таблицю OrdersArchive.
 SELECT *
 INTO "OrdersArchive"
