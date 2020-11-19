@@ -23,6 +23,7 @@ DELETE
 FROM "OrdersArchive"
 WHERE "OrderID" IN (SELECT "OrderID" FROM "OrdersArchive" WHERE "ShipCity" = 'Berlin' LIMIT 10);
 -- 7 Внести в базу два продукти з власним іменем та іменем групи.
+-- ProductID не може бути не заданим, оскільки автоінкремент в базі northwind не налаштований для бази postgres
 INSERT INTO products ("ProductID", "ProductName", "SupplierID", "CategoryID", "QuantityPerUnit", "UnitPrice",
                       "UnitsInStock", "UnitsOnOrder", "ReorderLevel", "Discontinued")
 VALUES (78, 'Данило', 18, 1, 'i''m not sold', 0, 1, 0, 5, 0),
