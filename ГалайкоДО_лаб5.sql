@@ -44,8 +44,18 @@ FROM "Student"
 WHERE "Sex" LIKE 'f';
 -- 10. Змінити тип даних первинного ключа на TinyInt (або SmallInt) не втрачаючи дані.
 DROP VIEW vMaleStudent, vFemaleStudent;
+
+SELECT *
+INTO TempStudents
+FROM "Student";
+TRUNCATE "Student";
 ALTER TABLE "Student"
     ALTER COLUMN "StudentId" type smallint;
+INSERT INTO "Student" ("SecondName", "FirstName", "Sex")
+SELECT "SecondName", "FirstName", "Sex"
+FROM TempStudents;
+DROP TABLE TempStudents;
+
 CREATE VIEW vMaleStudent AS
 SELECT *
 FROM "Student"
@@ -54,3 +64,4 @@ CREATE VIEW vFemaleStudent AS
 SELECT *
 FROM "Student"
 WHERE "Sex" LIKE 'f';
+
