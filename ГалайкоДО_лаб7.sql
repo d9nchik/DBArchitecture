@@ -1,23 +1,28 @@
 -- 1. Вивести на екран перший рядок з усіх таблиць без прив’язки до конкретної бази даних.
--- FIXME
-CREATE OR REPLACE FUNCTION get_all_tables_names(ref refcursor) returns refcursor
+-- В postgresql відсутній оператор print, тому завдання набуде наступного вигляду.
+CREATE OR REPLACE FUNCTION show_all_tables_names() returns void
     language plpgsql as
 
 $$
+DECLARE
+    curs cursor FOR SELECT table_schema || '.' || table_name AS db_name
+                    FROM information_schema.tables
+                    WHERE table_type = 'BASE TABLE'
+                      AND table_schema NOT IN ('pg_catalog', 'information_schema');
+    row RECORD;
+    my  text;
 begin
-    OPEN ref FOR SELECT table_schema || '.' || table_name
-                 FROM information_schema.tables
-                 WHERE table_type = 'BASE TABLE'
-                   AND table_schema NOT IN ('pg_catalog', 'information_schema');
-    return ref;
+    open curs;
+    LOOP
+        FETCH NEXT FROM curs INTO row;
+        EXIT WHEN not FOUND;
+        my = row.db_name;
+        raise notice '%', (SELECT * FROM my LIMIT 1);
+    end loop;
 end;
 $$;
-ROLLBACK;
-BEGIN;
-SELECT get_all_tables_names('funccursor');
-FETCH funccursor INTO rowvar;
 
-COMMIT;
+SELECT show_all_tables_names();
 
 -- 6. Створити тригер на таблиці Customers, що при вставці нового телефонного номеру буде видаляти усі символи крім цифр.
 
