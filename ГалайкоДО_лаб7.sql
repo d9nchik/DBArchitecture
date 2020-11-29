@@ -163,3 +163,110 @@ CREATE TRIGGER orders_delete_trigger
     ON "orders"
     FOR EACH ROW
 EXECUTE PROCEDURE orders_delete_trigger_fnc();
+-- 10. Створити три таблиці: TriggerTable1, TriggerTable2 та TriggerTable3. Кожна з таблиць має наступну структуру:
+-- TriggerId(int) – первинний ключ з автоінкрементом, TriggerDate(Date). Створити три тригера.
+-- Перший тригер повинен при будь-якому записі в таблицю TriggerTable1 додати дату запису в таблицю TriggerTable2.
+-- Другий тригер повинен при будь-якому записі в таблицю TriggerTable2 додати дату запису в таблицю TriggerTable3.
+-- Третій тригер працює аналогічно за таблицями TriggerTable3 та TriggerTable1.
+-- Вставте один рядок в таблицю TriggerTable1. Напишіть, що відбулось в коментарі до коду. Чому це сталося?
+create table "TriggerTable1"
+(
+    "TriggerId"   serial not null,
+    "TriggerDate" timestamp
+);
+
+create unique index triggertable1_triggerid_uindex
+    on "TriggerTable1" ("TriggerId");
+
+alter table "TriggerTable1"
+    add constraint triggertable1_pk
+        primary key ("TriggerId");
+
+create table "TriggerTable2"
+(
+    "TriggerId"   serial not null,
+    "TriggerDate" timestamp
+);
+
+create unique index triggertable2_triggerid_uindex
+    on "TriggerTable2" ("TriggerId");
+
+alter table "TriggerTable2"
+    add constraint triggertable2_pk
+        primary key ("TriggerId");
+
+create table "TriggerTable3"
+(
+    "TriggerId"   serial not null,
+    "TriggerDate" timestamp
+);
+
+create unique index triggertable3_triggerid_uindex
+    on "TriggerTable3" ("TriggerId");
+
+alter table "TriggerTable3"
+    add constraint triggertable3_pk
+        primary key ("TriggerId");
+-- Creating triggers
+CREATE OR REPLACE FUNCTION trigger_table_1_insert_trigger_fnc()
+    RETURNS trigger AS
+$$
+BEGIN
+    INSERT INTO "TriggerTable2" ("TriggerDate") VALUES (current_timestamp);
+    RETURN NEW;
+END;
+$$
+    LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_table_1_insert_trigger
+    BEFORE INSERT
+    ON "TriggerTable1"
+
+    FOR EACH ROW
+
+EXECUTE PROCEDURE trigger_table_1_insert_trigger_fnc();
+
+CREATE OR REPLACE FUNCTION trigger_table_2_insert_trigger_fnc()
+    RETURNS trigger AS
+$$
+BEGIN
+    INSERT INTO "TriggerTable3" ("TriggerDate") VALUES (current_timestamp);
+    RETURN NEW;
+END;
+$$
+    LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_table_2_insert_trigger
+    BEFORE INSERT
+    ON "TriggerTable2"
+
+    FOR EACH ROW
+
+EXECUTE PROCEDURE trigger_table_2_insert_trigger_fnc();
+
+CREATE OR REPLACE FUNCTION trigger_table_3_insert_trigger_fnc()
+    RETURNS trigger AS
+$$
+BEGIN
+    INSERT INTO "TriggerTable1" ("TriggerDate") VALUES (current_timestamp);
+    RETURN NEW;
+END;
+$$
+    LANGUAGE 'plpgsql';
+
+CREATE TRIGGER trigger_table_3_insert_trigger
+    BEFORE INSERT
+    ON "TriggerTable3"
+
+    FOR EACH ROW
+
+EXECUTE PROCEDURE trigger_table_3_insert_trigger_fnc();
+INSERT INTO "TriggerTable1" ("TriggerDate")
+VALUES (current_timestamp);
+-- Мій коментар: виникла помилка Stack overflow - переповнення глибини рекурсії(Циклічний виклик тригерів),
+-- оскільки операція не змогла бути виконана, тому був відкат транзакції. БД не була модифікована.
+--  ERROR: stack depth limit exceeded
+--  Подсказка: Increase the configuration parameter "max_stack_depth" (currently 2048kB),
+--  after ensuring the platform's stack depth limit is adequate. Где: SQL statement
+--  "INSERT INTO "TriggerTable2" ("TriggerDate") VALUES (current_timestamp)" PL/pgSQL function t
+--  rigger_table_1_insert_trigger_fnc() line 3 at SQL statement
