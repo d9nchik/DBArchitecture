@@ -118,3 +118,48 @@ CREATE TRIGGER contacts_insert_trigger
 EXECUTE PROCEDURE contacts_insert_trigger_fnc();
 INSERT INTO "Contacts" ("LastName", "FirstName", "PersonalPhone", "WorkPhone", "Email", "PreferableNumber")
 VALUES ('Danylo', 'Halaiko', '0965883521', '4300', 'naruto@gmail.com', null);
+-- 9. Створити таблицю OrdersArchive що дублює таблицю Orders та має додаткові атрибути DeletionDateTime та DeletedBy.
+-- Створити тригер, що при видаленні рядків з таблиці Orders буде додавати їх в таблицю OrdersArchive
+-- та заповнювати відповідні колонки.
+create table "OrdersArchive"
+(
+    "OrderID"          smallint not null
+        constraint pk_orders_archive
+            primary key,
+    "CustomerID"       bpchar,
+    "EmployeeID"       smallint,
+    "OrderDate"        date,
+    "RequiredDate"     date,
+    "ShippedDate"      date,
+    "ShipVia"          smallint,
+    "Freight"          real,
+    "ShipName"         varchar(40),
+    "ShipAddress"      varchar(60),
+    "ShipCity"         varchar(15),
+    "ShipRegion"       varchar(15),
+    "ShipPostalCode"   varchar(10),
+    "ShipCountry"      varchar(15),
+    "DeletionDateTime" timestamp,
+    "DeleteBy"         varchar(30)
+);
+
+CREATE OR REPLACE FUNCTION orders_delete_trigger_fnc()
+    RETURNS trigger AS
+$$
+BEGIN
+    INSERT INTO "OrdersArchive" ("OrderID", "CustomerID", "EmployeeID", "OrderDate", "RequiredDate", "ShippedDate",
+                                 "ShipVia", "Freight", "ShipName", "ShipAddress", "ShipCity", "ShipRegion",
+                                 "ShipPostalCode", "ShipCountry", "DeletionDateTime", "DeleteBy")
+    VALUES (old."OrderID", old."CustomerID", old."EmployeeID", old."OrderDate", old."RequiredDate", old."ShippedDate",
+            old."ShipVia", old."Freight", old."ShipName", old."ShipAddress", old."ShipCity", old."ShipRegion",
+            old."ShipPostalCode", old."ShipCountry", current_timestamp, session_user);
+    RETURN NEW;
+END;
+$$
+    LANGUAGE 'plpgsql';
+
+CREATE TRIGGER orders_delete_trigger
+    AFTER DELETE
+    ON "orders"
+    FOR EACH ROW
+EXECUTE PROCEDURE orders_delete_trigger_fnc();
