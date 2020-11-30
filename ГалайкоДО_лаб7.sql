@@ -1,28 +1,98 @@
--- 1. Вивести на екран перший рядок з усіх таблиць без прив’язки до конкретної бази даних.
--- В postgresql відсутній оператор print, тому завдання набуде наступного вигляду.
-CREATE OR REPLACE FUNCTION show_all_tables_names() returns void
-    language plpgsql as
-
+-- 1. Вивести на екран перший рядок з усіх таблиць без прив'язки до конкретної бази даних.
+CREATE OR REPLACE FUNCTION showFirstRowFromAllTables() Returns void AS
 $$
 DECLARE
-    curs cursor FOR SELECT table_schema || '.' || table_name AS db_name
-                    FROM information_schema.tables
-                    WHERE table_type = 'BASE TABLE'
-                      AND table_schema NOT IN ('pg_catalog', 'information_schema');
-    row RECORD;
-    my  text;
-begin
-    open curs;
-    LOOP
-        FETCH NEXT FROM curs INTO row;
-        EXIT WHEN not FOUND;
-        my = row.db_name;
-        raise notice '%', (SELECT * FROM my LIMIT 1);
-    end loop;
-end;
-$$;
+    Query   text;
+    Row     record;
+    "Table" record;
+BEGIN
+    For "Table" In Select * From pg_catalog.pg_tables Where schemaname = 'public'
+        LOOP
+            Query = 'select * from "' || "Table".tablename || '" LIMIT 1;';
+            For Row In Execute Query
+                LOOP
+                    Raise Notice '%', Row;
+                END LOOP;
+        END LOOP;
+END;
+$$
+    language plpgsql;
 
-SELECT show_all_tables_names();
+SELECT *
+FROM showFirstRowFromAllTables();
+
+-- 2. Видати дозвіл на читання бази даних Northwind усім користувачам вашої СУБД.
+-- Користувачі, що будуть створені після виконання запиту, доступ на читання отримати не повинні.
+
+GRANT SELECT on all Tables In SCHEMA public to public;
+
+-- 3. За допомогою курсору заборонити користувачеві TestUser доступ до всіх таблиць поточної бази даних,
+-- імена котрих починаються на префікс ‘prod_’.
+
+CREATE OR REPLACE FUNCTION forbidTestUserOnCurrentDB() returns void AS
+$$
+DECLARE
+    CurrTableS cursor For Select tablename
+                          from pg_catalog."pg_tables"
+                          WHERE schemaname = 'public'
+                            AND tablename LIKE 'prod\_%';
+    "Table" RECORD;
+BEGIN
+    FOR "Table" in CurrTableS
+        loop
+            execute 'Revoke all on table ' || "Table"."tablename" || ' From TestUser';
+        END loop;
+END;
+$$
+    language plpgsql;
+Select forbidTestUserOnCurrentDB();
+
+-- 4. В контексті бази Northwind створити збережену процедуру (або функцію), що приймає в якості параметра номер
+-- замовлення та виводить імена продуктів, їх кількість, та загальну суму по кожній позиції в залежності від вартості,
+-- кількості та наявності знижки. Запустити виконання збереженої процедури для всіх наявних замовлень.
+
+CREATE FUNCTION "InfoAboutProduct"(IdOfOrder smallint)
+    RETURNS VOID AS
+$$
+DECLARE
+    Product         RECORD;
+    ProductForOrder RECORD;
+BEGIN
+    Raise notice 'IdOfOrder: %', IdOfOrder;
+    FOR ProductForOrder IN Select * From order_details Where "OrderID" = IdOfOrder
+        LOOP
+            Select * into Product from products where "ProductID" = ProductForOrder."ProductID";
+            Raise notice 'Name of product: %', Product."ProductName";
+            Raise notice 'Price: %', (1 - ProductForOrder."Discount") * ProductForOrder."Quantity" *
+                                     ProductForOrder."UnitPrice";
+            Raise notice 'Quantity: %', ProductForOrder."Quantity";
+        END LOOP;
+END;
+$$
+    language plpgsql;
+SELECT "InfoAboutProduct"(CAST(10249 as smallint));
+
+-- 5. Видаліть дані з усіх таблиць в усіх базах даних наявної СУБД.
+-- Код повинен бути незалежним від наявних імен об'єктів.
+CREATE OR REPLACE FUNCTION DeleteDataTables() Returns void AS
+$$
+DECLARE
+    CURS CURSOR For Select tablename
+                    From pg_tables
+                    Where schemaname = 'public';
+
+BEGIN
+    For sth In CURS
+        Loop
+            Execute 'TRUNCATE TABLE ' || quote_ident(sth.tablename) || ' CASCADE;';
+        END Loop;
+END;
+$$
+    language plpgsql;
+BEGIN;
+SELECT DeleteDataTables();
+COMMIT;
+ROLLBACK;
 
 -- 6. Створити тригер на таблиці Customers, що при вставці нового телефонного номеру буде видаляти усі символи крім цифр.
 
